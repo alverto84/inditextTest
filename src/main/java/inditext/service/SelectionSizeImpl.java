@@ -2,63 +2,69 @@ package inditext.service;
 
 import inditext.model.ProdutcSize;
 import inditext.model.StockEntry;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.Builder;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Builder
 public class SelectionSizeImpl implements SelectionSize {
 
-  private final int ZERO = 0;
+    private static final int ZERO = 0;
 
-  //O(N + N*log(N) + N + N*log(N) + N) = 2N*log(N) +3N -> O(N*log(N))
-  public void sizeSelection(List<ProdutcSize> produtcsSize, List<StockEntry> stockEntries) {
+    //O(N + N*log(N) + N + N*log(N) + N) = 2N*log(N) +3N -> O(N*log(N))
+    public void sizeSelection(List<ProdutcSize> produtcsSize, List<StockEntry> stockEntries) {
 
-    HashMap<Integer, StockEntry> sizeMaxStock = new HashMap();
-    //O(N) Transform the stockEntries to HashMap for having O(1)-O(log(N)) access to the stock quantity by productIdSize
-    Map<Integer, Double> stockEntryMap = Optional.ofNullable(stockEntries).orElse(Collections.emptyList())
-        .stream()
-        .filter(s -> Objects.nonNull(s.getQuantity()) && s.getQuantity() > ZERO)
-        .collect(Collectors.toMap(StockEntry::getSizeId, StockEntry::getQuantity));
+        //O(N) Transform the stockEntries to HashMap for having O(1)-O(log(N)) access to the stock quantity by productIdSize
+        Map<Integer, Integer> stockEntriesMap = processStockEntries(stockEntries);
 
-    //O(N*log(N))
-    for (ProdutcSize ps : produtcsSize) {
-      Integer currentPid = ps.getId();
-      Integer size = ps.getSyzeSystem();
-      //O(log(N)) sum digits for identify the same size
-      int sum = sumDigits(size);
-      Double currentQuantity = stockEntryMap.get(currentPid);
-      if (Objects.nonNull(currentQuantity)) {
-        StockEntry maxStockEntry = sizeMaxStock.get(sum);
-        if (Objects.nonNull(maxStockEntry)) {
-          Double quantityOld = maxStockEntry.getQuantity();
-          if (currentQuantity > quantityOld) {
-            //For a concrete size update the max quantity for a productSizeId
-            sizeMaxStock.put(sum, StockEntry.builder().sizeId(currentPid).quantity(currentQuantity).build());
-          }
-        } else {
-          sizeMaxStock.put(sum, new StockEntry(currentPid, currentQuantity));
-        }
-      }
+        //This map is used for store the max stock productId for a uniqueSize
+        //Key: uniqueSize, Value: StockEntry(productId, quantity)
+        HashMap<Integer, StockEntry> uniqueSizeMaxStock = new HashMap<>();
+
+        //Iterate over each product and update the uniqueSizeMaxStock storing the max stock productId for a uniqueSize
+        //O(N*log(N))
+        produtcsSize.forEach(ps -> updateMaxUniqueSize(sumDigits(ps.getSyzeSystem()), ps.getId(), stockEntriesMap.get(ps.getId()), uniqueSizeMaxStock));
+
+        //Generate the productId list from the uniqueSize with more stock
+        // O(N)
+        int[] maxStockPid = uniqueSizeMaxStock.entrySet().stream().map(Map.Entry::getValue).map(StockEntry::getSizeId).mapToInt(i -> i).toArray();
+
+        //Parallel quicksort for sorting
+        //O(N*log(N)
+        Arrays.parallelSort(maxStockPid);
+
+        //Print the productId sorted list by console
+        //O(N)
+        System.out.println(Arrays.stream(maxStockPid).mapToObj(String::valueOf).collect(Collectors.joining(",")));
     }
-    //Generate result list O(N)
-    int[] maxStockPid =
-        sizeMaxStock.entrySet().stream().map(e -> e.getValue()).map(e -> e.getSizeId()).mapToInt(i -> i).toArray();
-    //O(N*log(N) parallel quicksort
-    Arrays.parallelSort(maxStockPid);
-    //O(N)
-    System.out.println(Arrays.stream(maxStockPid).mapToObj(String::valueOf).collect(Collectors.joining(",")));
-  }
 
-  //O(log(N))
-  int sumDigits(int n) {
-    return n == 0 ? 0 : n % 10 + sumDigits(n / 10);
-  }
+    private void updateMaxUniqueSize(int uniqueSize, Integer cPid, Integer currentQuantity, HashMap<Integer, StockEntry> uniqueSizeMaxStock) {
+        Optional.ofNullable(currentQuantity).ifPresent(cQuantity -> Optional.of(cQuantity).map(c -> uniqueSizeMaxStock.get(uniqueSize))
+                .ifPresentOrElse(maxStockEntry -> {
+                            Optional.of(maxStockEntry).map(StockEntry::getQuantity)
+                                    .filter(maxStockQuantity -> cQuantity > maxStockQuantity)
+                                    .ifPresent(i -> uniqueSizeMaxStock.put(uniqueSize, StockEntry.builder().sizeId(cPid).quantity(cQuantity).build()));
+                        }
+                        , () -> uniqueSizeMaxStock.put(uniqueSize, StockEntry.builder().sizeId(cPid).quantity(cQuantity).build())));
+    }
+
+    //O(N)
+    private Map<Integer, Integer> processStockEntries(List<StockEntry> stockEntries) {
+        return Optional.ofNullable(stockEntries).orElse(Collections.emptyList())
+                .stream()
+                .filter(this::stockBiggerThanZero)
+                .collect(Collectors.toMap(StockEntry::getSizeId, StockEntry::getQuantity));
+    }
+
+    //O(1)
+    private boolean stockBiggerThanZero(StockEntry stockEntry) {
+        return Objects.nonNull(stockEntry.getQuantity()) && stockEntry.getQuantity() > ZERO;
+    }
+
+    //O(log(N))
+    int sumDigits(int n) {
+        return n == 0 ? 0 : n % 10 + sumDigits(n / 10);
+    }
 }
 

@@ -34,14 +34,14 @@ public class SelectionSizeImplTest {
         ProdutcSize.builder().id(9).syzeSystem(987).build());
 
     stockEntry = List.of(
-        StockEntry.builder().sizeId(1).quantity(5.0).build(),
-        StockEntry.builder().sizeId(2).quantity(8.0).build(),
-        StockEntry.builder().sizeId(3).quantity(12.0).build(),
+        StockEntry.builder().sizeId(1).quantity(5).build(),
+        StockEntry.builder().sizeId(2).quantity(8).build(),
+        StockEntry.builder().sizeId(3).quantity(12).build(),
         StockEntry.builder().sizeId(4).quantity(null).build(),
-        StockEntry.builder().sizeId(5).quantity(3.0).build(),
-        StockEntry.builder().sizeId(6).quantity(15.0).build(),
-        StockEntry.builder().sizeId(7).quantity(15.5).build(),
-        StockEntry.builder().sizeId(9).quantity(-5.0).build());
+        StockEntry.builder().sizeId(5).quantity(3).build(),
+        StockEntry.builder().sizeId(6).quantity(15).build(),
+        StockEntry.builder().sizeId(7).quantity(16).build(),
+        StockEntry.builder().sizeId(9).quantity(-5).build());
   }
 
   @Test

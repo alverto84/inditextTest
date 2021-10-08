@@ -10,6 +10,6 @@ import lombok.Data;
 public class StockEntry {
 
   Integer sizeId;
-  Double quantity;
+  Integer quantity;
 
 }
