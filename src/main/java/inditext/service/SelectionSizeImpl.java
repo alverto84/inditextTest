@@ -3,17 +3,23 @@ package inditext.service;
 import inditext.model.ProdutcSize;
 import inditext.model.StockEntry;
 import lombok.Builder;
+import org.apache.log4j.Logger;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Builder
 public class SelectionSizeImpl implements SelectionSize {
 
+    static final Logger logger = Logger.getLogger(SelectionSizeImpl.class);
     private static final int ZERO = 0;
 
     //O(N + N*log(N) + N + N*log(N) + N) = 2N*log(N) +3N -> O(N*log(N))
     public void sizeSelection(List<ProdutcSize> produtcsSize, List<StockEntry> stockEntries) {
+
+        var start = Instant.now();
 
         //O(N) Transform the stockEntries to HashMap for having O(1)-O(log(N)) access to the stock quantity by productIdSize
         Map<Integer, Integer> stockEntriesMap = processStockEntries(stockEntries);
@@ -36,7 +42,11 @@ public class SelectionSizeImpl implements SelectionSize {
 
         //Print the productId sorted list by console
         //O(N)
-        System.out.println(Arrays.stream(maxStockPid).mapToObj(String::valueOf).collect(Collectors.joining(",")));
+        logger.info(Arrays.stream(maxStockPid).mapToObj(String::valueOf).collect(Collectors.joining(",")));
+
+        var finish = Instant.now();
+        long timeElapsed = Duration.between(start, finish).toMillis();
+        logger.info("Elapsed time: " + timeElapsed + "ms");
     }
 
     private void updateMaxUniqueSize(int uniqueSize, Integer cPid, Integer currentQuantity, HashMap<Integer, StockEntry> uniqueSizeMaxStock) {
