@@ -42,7 +42,7 @@ public class SelectionSizeImpl implements SelectionSize {
 
         //Print the productId sorted list by console
         //O(N)
-        logger.info(Arrays.stream(maxStockPid).mapToObj(String::valueOf).collect(Collectors.joining(",")));
+        System.out.println(Arrays.stream(maxStockPid).mapToObj(String::valueOf).collect(Collectors.joining(",")));
 
         var finish = Instant.now();
         long timeElapsed = Duration.between(start, finish).toMillis();
